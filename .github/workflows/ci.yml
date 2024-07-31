@@ -1,0 +1,104 @@
+name: Continuous Integration
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test-typescript:
+    name: TypeScript Tests
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        id: setup-node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Install Dependencies
+        id: npm-ci
+        run: npm ci
+
+      - name: Check Format
+        id: npm-format-check
+        run: npm run format:check
+
+      - name: Lint
+        id: npm-lint
+        run: npm run lint
+
+      - name: Test
+        id: npm-ci-test
+        run: npm run ci-test
+
+  test-action:
+    name: GitHub Actions Test
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v4
+
+      - run: npm install
+
+      - name: Read contents of test certificate into GitHub env
+        run: npm run ci-load-certificate
+
+      - name: Test Certificate Import
+        uses: ./
+        with:
+          asset-type: certificate
+          secret-value: ${{ env.DEVELOPER_CERTIFICATE }}
+
+      - name: Validate certificate installed
+        run: |
+          name="Apple Development: Created via API (DEADBEEFACID)"
+          result=$(security find-certificate -c "$name" -a)
+          if echo $result | grep -q "$name"; then
+            echo "Certificate found in keychain"
+            echo "::debug::Certificate found in keychain"
+          else
+            echo "Unable to find certificate in keychain"
+            echo "::error title=Certificate not found::Unable to find certificate in keychain"
+            echo $result
+            exit 1
+          fi
+
+      - name: Read contents of authkey into GitHub env
+        run: npm run ci-load-app-key
+
+      - name: Test App Store Connect API Key Import
+        uses: ./
+        with:
+          asset-type: app-store-connect-api-key
+          secret-value: ${{ env.APP_STORE_CONNECT_API_KEY }}
+
+      - name: Validate certificate installed
+        run: |
+          if ! [[ -f $RUNNER_TEMP/.app-store-connect-api-key.p8 ]]; then
+            echo "App Store Connect API Key not found"
+            echo "::error title=App Store Connect API Key not found::App Store Connect API Key not found"
+            ls -la $RUNNER_TEMP
+            exit 1
+          fi
+
+          if ! [[ -f $RUNNER_TEMP/.app-store-connect-api-key.json ]]; then
+            echo "App Store Connect API Key object not found"
+            echo "::error title=App Store Connect API Key object not found::App Store Connect API Key object not found"
+            ls -la $RUNNER_TEMP
+            exit 1
+          fi
