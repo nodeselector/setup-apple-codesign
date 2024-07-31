@@ -1,0 +1,33 @@
+name: hosted-runners-perf/import-apple-asset
+description: >
+  Import signing certificates, provisioning profiles, and App Store Connect API
+  keys from GitHub secrets into your macOS runner.
+author: '@nodeselector'
+branding:
+  icon: 'command'
+  color: 'blue'
+inputs:
+  asset-type:
+    description: >
+      * The type of asset to import. This can be either:
+        * `certificate`
+        * `provisioning-profile`
+        * `app-store-connect-api-key`
+    required: true
+  secret-value:
+    description: >
+      * The value of the secret to import.
+    required: true
+  keychain-name:
+    description: >
+      * The name of the keychain to use for importing the asset. * Only valid
+      for the `certificate` asset-type.
+    default: 'ci'
+  keychain-password:
+    description: >
+      * The password for the keychain. * Only valid for the `certificate`
+      asset-type.
+    default: ''
+runs:
+  using: node20
+  main: dist/index.js
