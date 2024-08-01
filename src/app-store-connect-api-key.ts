@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { spawn } from './spawn'
-import core from '@actions/core'
+import * as core from '@actions/core'
 
 type AppStoreAuthConfig = {
   keyId: string
