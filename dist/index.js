@@ -53357,16 +53357,20 @@ const node_fs_1 = __importDefault(__nccwpck_require__(7561));
 const node_path_1 = __importDefault(__nccwpck_require__(9411));
 const spawn_1 = __nccwpck_require__(509);
 const core = __importStar(__nccwpck_require__(2186));
-async function appStoreConnectApiKey(secretValue, destinationDir = process.env.RUNNER_TEMP || '') {
+async function appStoreConnectApiKey(secretValue, destinationDir = '') {
     if (!destinationDir) {
-        throw new Error('RUNNER_TEMP not set');
+        // see man altool for path expectations. most of the xcode tools allow you to specify a path
+        // but notably, not altool.
+        destinationDir = node_path_1.default.join(process.env.HOME, '.appstoreconnect/private_keys');
+        node_fs_1.default.mkdirSync(destinationDir, { recursive: true });
     }
     const decodedSecret = Buffer.from(secretValue, 'base64').toString('utf-8');
     const appStoreAuthConfig = JSON.parse(decodedSecret);
-    const apiKeyPath = node_path_1.default.join(destinationDir, '.app-store-connect-api-key.json');
+    const apiKeyPath = node_path_1.default.join(destinationDir, 'keyinfo.json');
     node_fs_1.default.writeFileSync(apiKeyPath, decodedSecret);
     const decodedPrivateKey = Buffer.from(appStoreAuthConfig.privateKey, 'base64').toString('utf-8');
-    const privateKeyPath = node_path_1.default.join(destinationDir, '.app-store-connect-api-key.p8');
+    const privateKeyPath = node_path_1.default.join(destinationDir, `AuthKey_${appStoreAuthConfig.keyId}.p8` // altool expects this naming convention
+    );
     node_fs_1.default.writeFileSync(privateKeyPath, decodedPrivateKey);
     core.setOutput('app-store-connect-api-key-key-path', privateKeyPath);
     core.setOutput('app-store-connect-api-key-key-id', appStoreAuthConfig.keyId);

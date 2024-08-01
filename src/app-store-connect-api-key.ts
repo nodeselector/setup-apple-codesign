@@ -11,16 +11,19 @@ type AppStoreAuthConfig = {
 
 export async function appStoreConnectApiKey(
   secretValue: string,
-  destinationDir: string = process.env.RUNNER_TEMP || ''
+  destinationDir: string = ''
 ): Promise<void> {
   if (!destinationDir) {
-    throw new Error('RUNNER_TEMP not set')
+    // see man altool for path expectations. most of the xcode tools allow you to specify a path
+    // but notably, not altool.
+    destinationDir = path.join(process.env.HOME as string, '.appstoreconnect/private_keys')
+    fs.mkdirSync(destinationDir, { recursive: true })
   }
   const decodedSecret = Buffer.from(secretValue, 'base64').toString('utf-8')
   const appStoreAuthConfig: AppStoreAuthConfig = JSON.parse(decodedSecret)
   const apiKeyPath = path.join(
     destinationDir,
-    '.app-store-connect-api-key.json'
+    'keyinfo.json'
   )
   fs.writeFileSync(apiKeyPath, decodedSecret)
   const decodedPrivateKey = Buffer.from(
@@ -29,7 +32,7 @@ export async function appStoreConnectApiKey(
   ).toString('utf-8')
   const privateKeyPath = path.join(
     destinationDir,
-    '.app-store-connect-api-key.p8'
+    `AuthKey_${appStoreAuthConfig.keyId}.p8` // altool expects this naming convention
   )
   fs.writeFileSync(privateKeyPath, decodedPrivateKey)
 
