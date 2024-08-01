@@ -33,9 +33,9 @@ export async function appStoreConnectApiKey(
   )
   fs.writeFileSync(privateKeyPath, decodedPrivateKey)
 
-  core.setOutput('app-store-connect-api-private-key-path', privateKeyPath)
-  core.setOutput('app-store-connect-api-key-id', appStoreAuthConfig.keyId)
-  core.setOutput('app-store-connect-api-issuer-id', appStoreAuthConfig.issuerId)  
+  core.setOutput('app-store-connect-api-key-key-path', privateKeyPath)
+  core.setOutput('app-store-connect-api-key-key-id', appStoreAuthConfig.keyId)
+  core.setOutput('app-store-connect-api-key-issuer-id', appStoreAuthConfig.issuerId)  
 
 }
 

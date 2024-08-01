@@ -53368,9 +53368,9 @@ async function appStoreConnectApiKey(secretValue, destinationDir = process.env.R
     const decodedPrivateKey = Buffer.from(appStoreAuthConfig.privateKey, 'base64').toString('utf-8');
     const privateKeyPath = node_path_1.default.join(destinationDir, '.app-store-connect-api-key.p8');
     node_fs_1.default.writeFileSync(privateKeyPath, decodedPrivateKey);
-    core.setOutput('app-store-connect-api-private-key-path', privateKeyPath);
-    core.setOutput('app-store-connect-api-key-id', appStoreAuthConfig.keyId);
-    core.setOutput('app-store-connect-api-issuer-id', appStoreAuthConfig.issuerId);
+    core.setOutput('app-store-connect-api-key-key-path', privateKeyPath);
+    core.setOutput('app-store-connect-api-key-key-id', appStoreAuthConfig.keyId);
+    core.setOutput('app-store-connect-api-key-issuer-id', appStoreAuthConfig.issuerId);
 }
 async function buildAppStoreConnectApiKeyObject(keyId, issuerId, privateKeyPath) {
     const secretValue = node_fs_1.default.readFileSync(privateKeyPath, 'utf-8');
