@@ -53333,6 +53333,7 @@ exports.generateTestKey = generateTestKey;
 const node_fs_1 = __importDefault(__nccwpck_require__(7561));
 const node_path_1 = __importDefault(__nccwpck_require__(9411));
 const spawn_1 = __nccwpck_require__(509);
+const core_1 = __importDefault(__nccwpck_require__(2186));
 async function appStoreConnectApiKey(secretValue, destinationDir = process.env.RUNNER_TEMP || '') {
     if (!destinationDir) {
         throw new Error('RUNNER_TEMP not set');
@@ -53344,6 +53345,9 @@ async function appStoreConnectApiKey(secretValue, destinationDir = process.env.R
     const decodedPrivateKey = Buffer.from(appStoreAuthConfig.privateKey, 'base64').toString('utf-8');
     const privateKeyPath = node_path_1.default.join(destinationDir, '.app-store-connect-api-key.p8');
     node_fs_1.default.writeFileSync(privateKeyPath, decodedPrivateKey);
+    core_1.default.setOutput('app-store-connect-api-private-key-path', privateKeyPath);
+    core_1.default.setOutput('app-store-connect-api-key-id', appStoreAuthConfig.keyId);
+    core_1.default.setOutput('app-store-connect-api-issuer-id', appStoreAuthConfig.issuerId);
 }
 async function buildAppStoreConnectApiKeyObject(keyId, issuerId, privateKeyPath) {
     const secretValue = node_fs_1.default.readFileSync(privateKeyPath, 'utf-8');
