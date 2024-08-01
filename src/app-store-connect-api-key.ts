@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { spawn } from './spawn'
+import core from '@actions/core'
 
 type AppStoreAuthConfig = {
   keyId: string
@@ -31,6 +32,11 @@ export async function appStoreConnectApiKey(
     '.app-store-connect-api-key.p8'
   )
   fs.writeFileSync(privateKeyPath, decodedPrivateKey)
+
+  core.setOutput('app-store-connect-api-private-key-path', privateKeyPath)
+  core.setOutput('app-store-connect-api-key-id', appStoreAuthConfig.keyId)
+  core.setOutput('app-store-connect-api-issuer-id', appStoreAuthConfig.issuerId)  
+
 }
 
 export async function buildAppStoreConnectApiKeyObject(
