@@ -19,14 +19,14 @@ export async function prepareKeychainWithDeveloperCertificate(
   keychain: Keychain
 ): Promise<void> {
   const decodedCert = Buffer.from(secretValue, 'base64').toString('utf-8')
-  // TODO this won't work for all certificate encodings (e.g. DER)
-  try {
-    pki.certificateFromPem(decodedCert)
-  } catch (e) {
-    throw new Error(
-      `Failed to parse certificate (PEM support only right now): ${e}`
-    )
-  }
+  // // TODO this won't work for all certificate encodings (e.g. DER)
+  // try {
+  //   pki.certificateFromPem(decodedCert)
+  // } catch (e) {
+  //   throw new Error(
+  //     `Failed to parse certificate (PEM support only right now): ${e}`
+  //   )
+  // }
 
   await keychain.createKeychain()
   await keychain.addToSearchList()
