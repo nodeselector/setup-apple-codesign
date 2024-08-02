@@ -43,11 +43,11 @@ jobs:
         with:
           asset-type: "app-store-connect-api-key"
           secret-value: ${{ secrets.APP_STORE_CONNECT_API_KEY_KEY }}
-      - uses: nodeselector/setup-apple-codesign@dev
+      - uses: nodeselector/setup-apple-codesign@v0.0.2
         with:
           asset-type: "certificate"
           secret-value: ${{ secrets.CODE_SIGNING_CERTIFICATE_DEVELOPMENT_PEM }}
-      - uses: nodeselector/setup-apple-codesign@v0.0.2
+      - uses: nodeselector/xcodebuild@v0.0.2
         with:
           action: 'archive'
           scheme: "helloworld"
@@ -55,14 +55,14 @@ jobs:
           archive-path: "build/helloworld.xcarchive"
           destination: "generic/platform=iOS"
           allow-provisioning-updates: true
-      - uses: nodeselector/xcodebuild@v0.0.1
+      - uses: nodeselector/xcodebuild@v0.0.2
         id: export
         with:
           action: 'export'
           archive-path: "build/helloworld.xcarchive"
           allow-provisioning-updates: true
           export-method: "ad-hoc"
-      - uses: nodeselector/xcodebuild@v0.0.1
+      - uses: nodeselector/xcodebuild@v0.0.2
         with:
           action: 'upload'
           product-name: "helloworld"
