@@ -11,20 +11,20 @@ type AppStoreAuthConfig = {
 
 export async function appStoreConnectApiKey(
   secretValue: string,
-  destinationDir: string = ''
+  destinationDir = ''
 ): Promise<void> {
   if (!destinationDir) {
     // see man altool for path expectations. most of the xcode tools allow you to specify a path
     // but notably, not altool.
-    destinationDir = path.join(process.env.HOME as string, '.appstoreconnect/private_keys')
+    destinationDir = path.join(
+      process.env.HOME as string,
+      '.appstoreconnect/private_keys'
+    )
     fs.mkdirSync(destinationDir, { recursive: true })
   }
   const decodedSecret = Buffer.from(secretValue, 'base64').toString('utf-8')
   const appStoreAuthConfig: AppStoreAuthConfig = JSON.parse(decodedSecret)
-  const apiKeyPath = path.join(
-    destinationDir,
-    'keyinfo.json'
-  )
+  const apiKeyPath = path.join(destinationDir, 'keyinfo.json')
   fs.writeFileSync(apiKeyPath, decodedSecret)
   const decodedPrivateKey = Buffer.from(
     appStoreAuthConfig.privateKey,
@@ -38,8 +38,10 @@ export async function appStoreConnectApiKey(
 
   core.setOutput('app-store-connect-api-key-key-path', privateKeyPath)
   core.setOutput('app-store-connect-api-key-key-id', appStoreAuthConfig.keyId)
-  core.setOutput('app-store-connect-api-key-issuer-id', appStoreAuthConfig.issuerId)  
-
+  core.setOutput(
+    'app-store-connect-api-key-issuer-id',
+    appStoreAuthConfig.issuerId
+  )
 }
 
 export async function buildAppStoreConnectApiKeyObject(

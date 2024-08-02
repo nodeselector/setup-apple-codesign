@@ -30,16 +30,13 @@ describe('certificate', () => {
 
     await appStoreConnectApiKey(base64ApiKey, testDir)
 
-    const gotAppStoreAuthObjPath = path.join(
-      testDir,
-      '.app-store-connect-api-key.json'
-    )
+    const gotAppStoreAuthObjPath = path.join(testDir, 'keyinfo.json')
     const gotAppStoreAuthObj = JSON.parse(
       fs.readFileSync(gotAppStoreAuthObjPath, 'utf-8')
     )
     expect(gotAppStoreAuthObj).toEqual(appStoreConnectConfig)
 
-    const privateKeyPath = path.join(testDir, '.app-store-connect-api-key.p8')
+    const privateKeyPath = path.join(testDir, 'AuthKey_keyId.p8')
     const gotPrivateKey = fs.readFileSync(privateKeyPath, 'utf-8')
     expect(gotPrivateKey).toEqual(
       Buffer.from(appStoreConnectConfig.privateKey, 'base64').toString('utf-8')
