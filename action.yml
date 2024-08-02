@@ -28,6 +28,19 @@ inputs:
       * The password for the keychain. * Only valid for the `certificate`
       asset-type.
     default: ''
+outputs:
+  app-store-connect-api-key-key-id:
+    description: >
+      * The identifier of the App Store Connect API key. * Only valid for the
+      `app-store-connect-api-key` asset-type.
+  app-store-connect-api-key-issuer-id:
+    description: >
+      * The identifier of the App Store Connect API key issuer. * Only valid for
+      the `app-store-connect-api-key` asset-type.
+  app-store-connect-api-key-key-path:
+    description: >
+      * The private key of the App Store Connect API key. * Only valid for the
+      `app-store-connect-api-key` asset-type.
 runs:
   using: node20
   main: dist/index.js

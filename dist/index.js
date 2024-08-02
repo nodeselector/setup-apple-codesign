@@ -53323,6 +53323,29 @@ exports["default"] = _default;
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -53333,17 +53356,25 @@ exports.generateTestKey = generateTestKey;
 const node_fs_1 = __importDefault(__nccwpck_require__(7561));
 const node_path_1 = __importDefault(__nccwpck_require__(9411));
 const spawn_1 = __nccwpck_require__(509);
-async function appStoreConnectApiKey(secretValue, destinationDir = process.env.RUNNER_TEMP || '') {
+const core = __importStar(__nccwpck_require__(2186));
+async function appStoreConnectApiKey(secretValue, destinationDir = '') {
     if (!destinationDir) {
-        throw new Error('RUNNER_TEMP not set');
+        // see man altool for path expectations. most of the xcode tools allow you to specify a path
+        // but notably, not altool.
+        destinationDir = node_path_1.default.join(process.env.HOME, '.appstoreconnect/private_keys');
+        node_fs_1.default.mkdirSync(destinationDir, { recursive: true });
     }
     const decodedSecret = Buffer.from(secretValue, 'base64').toString('utf-8');
     const appStoreAuthConfig = JSON.parse(decodedSecret);
-    const apiKeyPath = node_path_1.default.join(destinationDir, '.app-store-connect-api-key.json');
+    const apiKeyPath = node_path_1.default.join(destinationDir, 'keyinfo.json');
     node_fs_1.default.writeFileSync(apiKeyPath, decodedSecret);
     const decodedPrivateKey = Buffer.from(appStoreAuthConfig.privateKey, 'base64').toString('utf-8');
-    const privateKeyPath = node_path_1.default.join(destinationDir, '.app-store-connect-api-key.p8');
+    const privateKeyPath = node_path_1.default.join(destinationDir, `AuthKey_${appStoreAuthConfig.keyId}.p8` // altool expects this naming convention
+    );
     node_fs_1.default.writeFileSync(privateKeyPath, decodedPrivateKey);
+    core.setOutput('app-store-connect-api-key-key-path', privateKeyPath);
+    core.setOutput('app-store-connect-api-key-key-id', appStoreAuthConfig.keyId);
+    core.setOutput('app-store-connect-api-key-issuer-id', appStoreAuthConfig.issuerId);
 }
 async function buildAppStoreConnectApiKeyObject(keyId, issuerId, privateKeyPath) {
     const secretValue = node_fs_1.default.readFileSync(privateKeyPath, 'utf-8');
