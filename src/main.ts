@@ -1,7 +1,10 @@
 import * as core from '@actions/core'
 import { prepareKeychainWithDeveloperCertificate } from './certificate'
 import { provisioningProfile } from './provisioning-profile'
-import { appStoreConnectApiKey } from './app-store-connect-api-key'
+import {
+  appStoreConnectApiKey,
+  appStoreConfigFromSecretValue
+} from './app-store-connect-api-key'
 import { Keychain } from './keychain'
 
 /**
@@ -35,7 +38,32 @@ export async function run(): Promise<void> {
         await provisioningProfile(secretValue)
         break
       case 'app-store-connect-api-key': {
-        await appStoreConnectApiKey(secretValue)
+        if (secretValue) {
+          await appStoreConnectApiKey(
+            appStoreConfigFromSecretValue(secretValue)
+          )
+          break
+        }
+
+        const keyId: string = core.getInput('app-store-connect-api-key-key-id')
+        const issuerId: string = core.getInput(
+          'app-store-connect-api-key-issuer-id'
+        )
+        const privateKey: string = core.getInput(
+          'app-store-connect-api-key-base64-private-key'
+        )
+
+        if (!keyId || !issuerId || !privateKey) {
+          throw new Error(
+            'Missing required input for app-store-connect-api-key asset type'
+          )
+        }
+
+        await appStoreConnectApiKey({
+          keyId,
+          issuerId,
+          privateKey
+        })
         break
       }
       default:

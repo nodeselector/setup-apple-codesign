@@ -17,7 +17,25 @@ inputs:
   secret-value:
     description: >
       * The value of the secret to import.
-    required: true
+    default: ''
+  app-store-connect-api-key-key-id:
+    description: >
+      * The identifier of the App Store Connect API key. * Only valid for the
+      `app-store-connect-api-key` asset-type. Mutualy exclusive with
+      `secret-value`.
+    default: ''
+  app-store-connect-api-key-issuer-id:
+    description: >
+      * The identifier of the App Store Connect API key issuer. * Only valid for
+      the `app-store-connect-api-key` asset-type. Mutualy exclusive with
+      `secret-value`.
+    default: ''
+  app-store-connect-api-key-base64-private-key:
+    description: >
+      * The base64 encoded private key of the App Store Connect API key. * Only
+      valid for the `app-store-connect-api-key` asset-type. Mutualy exclusive
+      with `secret-value`.
+    default: ''
   keychain-name:
     description: >
       * The name of the keychain to use for importing the asset. * Only valid

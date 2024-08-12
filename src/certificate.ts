@@ -1,5 +1,4 @@
 import { Keychain } from './keychain'
-import { pki } from 'node-forge'
 import { spawn } from './spawn'
 import fs from 'node:fs'
 

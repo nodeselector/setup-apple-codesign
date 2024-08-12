@@ -31,6 +31,9 @@ let provisioningProfileMock: jest.SpiedFunction<
 let appStoreConnectApiKeyMock: jest.SpiedFunction<
   typeof appStoreConnectApiKey.appStoreConnectApiKey
 >
+let appStoreConfigFromSecretValueMock: jest.SpiedFunction<
+  typeof appStoreConnectApiKey.appStoreConfigFromSecretValue
+>
 
 describe('action', () => {
   beforeEach(() => {
@@ -47,6 +50,9 @@ describe('action', () => {
       .mockImplementation()
     appStoreConnectApiKeyMock = jest
       .spyOn(appStoreConnectApiKey, 'appStoreConnectApiKey')
+      .mockImplementation()
+    appStoreConfigFromSecretValueMock = jest
+      .spyOn(appStoreConnectApiKey, 'appStoreConfigFromSecretValue')
       .mockImplementation()
   })
 
@@ -165,6 +171,36 @@ describe('action', () => {
     expect(setSecretMock).toHaveBeenCalledWith('test-secret-value')
     expect(certificateMock).not.toHaveBeenCalled()
     expect(provisioningProfileMock).not.toHaveBeenCalled()
-    expect(appStoreConnectApiKeyMock).toHaveBeenCalledWith('test-secret-value')
+    expect(appStoreConfigFromSecretValueMock).toHaveBeenCalledWith(
+      'test-secret-value'
+    )
+  })
+
+  it('calls appStoreConnectApiKey for app-store-connect-api-key asset type with auth inputs', async () => {
+    getInputMock.mockImplementation(name => {
+      switch (name) {
+        case 'asset-type':
+          return 'app-store-connect-api-key'
+        case 'app-store-connect-api-key-key-id':
+          return 'test-key-id'
+        case 'app-store-connect-api-key-issuer-id':
+          return 'test-issuer-id'
+        case 'app-store-connect-api-key-base64-private-key':
+          return 'test-base64-private-key'
+        default:
+          return ''
+      }
+    })
+
+    await main.run()
+    expect(runMock).toHaveReturned()
+    expect(setSecretMock).toHaveBeenCalledWith('')
+    expect(certificateMock).not.toHaveBeenCalled()
+    expect(provisioningProfileMock).not.toHaveBeenCalled()
+    expect(appStoreConnectApiKeyMock).toHaveBeenCalledWith({
+      keyId: 'test-key-id',
+      issuerId: 'test-issuer-id',
+      privateKey: 'test-base64-private-key'
+    })
   })
 })

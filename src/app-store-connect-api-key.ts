@@ -9,8 +9,15 @@ type AppStoreAuthConfig = {
   privateKey: string
 }
 
+export function appStoreConfigFromSecretValue(
+  secretValue: string
+): AppStoreAuthConfig {
+  const decodedSecret = Buffer.from(secretValue, 'base64').toString('utf-8')
+  return JSON.parse(decodedSecret)
+}
+
 export async function appStoreConnectApiKey(
-  secretValue: string,
+  appStoreAuthConfig: AppStoreAuthConfig,
   destinationDir = ''
 ): Promise<void> {
   if (!destinationDir) {
@@ -22,10 +29,8 @@ export async function appStoreConnectApiKey(
     )
     fs.mkdirSync(destinationDir, { recursive: true })
   }
-  const decodedSecret = Buffer.from(secretValue, 'base64').toString('utf-8')
-  const appStoreAuthConfig: AppStoreAuthConfig = JSON.parse(decodedSecret)
   const apiKeyPath = path.join(destinationDir, 'keyinfo.json')
-  fs.writeFileSync(apiKeyPath, decodedSecret)
+  fs.writeFileSync(apiKeyPath, JSON.stringify(appStoreAuthConfig))
   const decodedPrivateKey = Buffer.from(
     appStoreAuthConfig.privateKey,
     'base64'

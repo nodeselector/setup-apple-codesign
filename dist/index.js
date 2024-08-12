@@ -24952,6 +24952,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.appStoreConfigFromSecretValue = appStoreConfigFromSecretValue;
 exports.appStoreConnectApiKey = appStoreConnectApiKey;
 exports.buildAppStoreConnectApiKeyObject = buildAppStoreConnectApiKeyObject;
 exports.generateTestKey = generateTestKey;
@@ -24959,17 +24960,19 @@ const node_fs_1 = __importDefault(__nccwpck_require__(7561));
 const node_path_1 = __importDefault(__nccwpck_require__(9411));
 const spawn_1 = __nccwpck_require__(509);
 const core = __importStar(__nccwpck_require__(2186));
-async function appStoreConnectApiKey(secretValue, destinationDir = '') {
+function appStoreConfigFromSecretValue(secretValue) {
+    const decodedSecret = Buffer.from(secretValue, 'base64').toString('utf-8');
+    return JSON.parse(decodedSecret);
+}
+async function appStoreConnectApiKey(appStoreAuthConfig, destinationDir = '') {
     if (!destinationDir) {
         // see man altool for path expectations. most of the xcode tools allow you to specify a path
         // but notably, not altool.
         destinationDir = node_path_1.default.join(process.env.HOME, '.appstoreconnect/private_keys');
         node_fs_1.default.mkdirSync(destinationDir, { recursive: true });
     }
-    const decodedSecret = Buffer.from(secretValue, 'base64').toString('utf-8');
-    const appStoreAuthConfig = JSON.parse(decodedSecret);
     const apiKeyPath = node_path_1.default.join(destinationDir, 'keyinfo.json');
-    node_fs_1.default.writeFileSync(apiKeyPath, decodedSecret);
+    node_fs_1.default.writeFileSync(apiKeyPath, JSON.stringify(appStoreAuthConfig));
     const decodedPrivateKey = Buffer.from(appStoreAuthConfig.privateKey, 'base64').toString('utf-8');
     const privateKeyPath = node_path_1.default.join(destinationDir, `AuthKey_${appStoreAuthConfig.keyId}.p8` // altool expects this naming convention
     );
@@ -25355,7 +25358,21 @@ async function run() {
                 await (0, provisioning_profile_1.provisioningProfile)(secretValue);
                 break;
             case 'app-store-connect-api-key': {
-                await (0, app_store_connect_api_key_1.appStoreConnectApiKey)(secretValue);
+                if (secretValue) {
+                    await (0, app_store_connect_api_key_1.appStoreConnectApiKey)((0, app_store_connect_api_key_1.appStoreConfigFromSecretValue)(secretValue));
+                    break;
+                }
+                const keyId = core.getInput('app-store-connect-api-key-key-id');
+                const issuerId = core.getInput('app-store-connect-api-key-issuer-id');
+                const privateKey = core.getInput('app-store-connect-api-key-base64-private-key');
+                if (!keyId || !issuerId || !privateKey) {
+                    throw new Error('Missing required input for app-store-connect-api-key asset type');
+                }
+                await (0, app_store_connect_api_key_1.appStoreConnectApiKey)({
+                    keyId,
+                    issuerId,
+                    privateKey
+                });
                 break;
             }
             default:
