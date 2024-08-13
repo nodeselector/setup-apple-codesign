@@ -177,10 +177,15 @@ export class Keychain {
    * Unlock the keychain.
    */
   async unlock(): Promise<spawnResult> {
-    return this.runCommand('security', [
+    await this.runCommand('security', [
       'unlock-keychain',
       '-p',
       this.keychainPassword,
+      this.keychainNameToPath()
+    ])
+
+    return this.runCommand('security', [
+      'set-keychain-settings',
       this.keychainNameToPath()
     ])
   }
