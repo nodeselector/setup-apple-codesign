@@ -20,7 +20,9 @@ export async function run(): Promise<void> {
   try {
     const assetType: string = core.getInput('asset-type')
     const secretValue: string = core.getInput('secret-value')
-    core.setSecret(secretValue)
+    if (secretValue) {
+      core.setSecret(secretValue)
+    }
     switch (assetType) {
       case 'certificate': {
         const keychainName: string = core.getInput('keychain-name')
