@@ -214,17 +214,18 @@ export async function isOpenSSL3OrHigher(): Promise<boolean> {
 
 /**
  * Convert P12 format to PEM format using OpenSSL.
- * This method is more robust than node-forge for certain p12 files,
- * especially those using RC2-40-CBC encryption which requires the legacy provider in OpenSSL 3.x.
+ * This is necessary because importing P12 directly into macOS keychain
+ * can trigger interactive prompts, while PEM import is non-interactive.
+ * Detects OpenSSL version and adds -legacy flag for OpenSSL 3.x to support
+ * RC2-40-CBC and other legacy algorithms commonly found in Apple certificates.
  * @param p12Data The P12 certificate data as a Buffer.
  * @param password The password for the P12 file (empty string if no password).
  * @returns A string containing the PEM format certificate and private key.
  */
-export async function convertP12ToPemWithOpenSSL(
+export async function convertP12ToPem(
   p12Data: Buffer,
   password = ''
 ): Promise<string> {
-  // Create temporary files for input and output
   const tempDir = os.tmpdir()
   const p12Path = path.join(
     tempDir,
@@ -236,17 +237,15 @@ export async function convertP12ToPemWithOpenSSL(
   )
 
   try {
-    // Write p12 data to temporary file
     fs.writeFileSync(p12Path, p12Data as Uint8Array)
 
-    // Build OpenSSL command arguments
     const args = [
       'pkcs12',
       '-in',
       p12Path,
       '-out',
       pemPath,
-      '-nodes', // Don't encrypt private key in output
+      '-nodes',
       '-passin',
       `pass:${password}`
     ]
@@ -257,7 +256,6 @@ export async function convertP12ToPemWithOpenSSL(
       args.push('-legacy')
     }
 
-    // Run OpenSSL conversion
     const result = await spawn('openssl', args)
     if (result.Code !== 0) {
       throw new Error(
@@ -265,12 +263,11 @@ export async function convertP12ToPemWithOpenSSL(
       )
     }
 
-    // Read the generated PEM file
     const pemData = fs.readFileSync(pemPath, 'utf-8')
     return pemData
   } catch (error) {
     throw new Error(
-      `Failed to convert P12 to PEM using OpenSSL: ${error instanceof Error ? error.message : String(error)}`
+      `Failed to convert P12 to PEM: ${error instanceof Error ? error.message : String(error)}`
     )
   } finally {
     // Clean up temporary files
@@ -283,91 +280,6 @@ export async function convertP12ToPemWithOpenSSL(
       }
     } catch (cleanupError) {
       // Ignore cleanup errors
-    }
-  }
-}
-
-/**
- * Convert P12 format to PEM format using node-forge.
- * This is kept as a fallback method.
- * @param p12Data The P12 certificate data as a Buffer.
- * @param password The password for the P12 file (empty string if no password).
- * @returns A string containing the PEM format certificate and private key.
- */
-export async function convertP12ToPemWithForge(
-  p12Data: Buffer,
-  password = ''
-): Promise<string> {
-  try {
-    // Convert Buffer to node-forge compatible format
-    const p12Der = forge.util.decode64(p12Data.toString('base64'))
-    const p12Asn1 = forge.asn1.fromDer(p12Der)
-
-    // Parse the PKCS#12 structure
-    const p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, password)
-
-    // Extract bags
-    const certBags = p12.getBags({ bagType: forge.pki.oids.certBag })
-    const keyBags = p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag })
-
-    // Build PEM output
-    const pemParts: string[] = []
-
-    // Add private key if found
-    const keyBagArray = keyBags[forge.pki.oids.pkcs8ShroudedKeyBag]
-    if (keyBagArray && keyBagArray.length > 0) {
-      const keyBag = keyBagArray[0]
-      if (keyBag.key) {
-        pemParts.push(forge.pki.privateKeyToPem(keyBag.key))
-      }
-    }
-
-    // Add certificates if found
-    const certBagArray = certBags[forge.pki.oids.certBag]
-    if (certBagArray && certBagArray.length > 0) {
-      for (const certBag of certBagArray) {
-        if (certBag.cert) {
-          pemParts.push(forge.pki.certificateToPem(certBag.cert))
-        }
-      }
-    }
-
-    if (pemParts.length === 0) {
-      throw new Error('No certificates or keys found in P12 file')
-    }
-
-    return pemParts.join('\n')
-  } catch (error) {
-    throw new Error(
-      `Failed to convert P12 to PEM using node-forge: ${error instanceof Error ? error.message : String(error)}`
-    )
-  }
-}
-
-/**
- * Convert P12 format to PEM format.
- * Tries OpenSSL first (more robust), falls back to node-forge if OpenSSL fails.
- * @param p12Data The P12 certificate data as a Buffer.
- * @param password The password for the P12 file (empty string if no password).
- * @returns A string containing the PEM format certificate and private key.
- */
-export async function convertP12ToPem(
-  p12Data: Buffer,
-  password = ''
-): Promise<string> {
-  try {
-    // Try OpenSSL first - it's more robust and handles RC2-encrypted p12 files
-    return await convertP12ToPemWithOpenSSL(p12Data, password)
-  } catch (opensslError) {
-    // Fall back to node-forge if OpenSSL fails
-    try {
-      return await convertP12ToPemWithForge(p12Data, password)
-    } catch (forgeError) {
-      // If both fail, throw a combined error message
-      throw new Error(
-        `Failed to convert P12 to PEM. OpenSSL error: ${opensslError instanceof Error ? opensslError.message : String(opensslError)}. ` +
-          `node-forge error: ${forgeError instanceof Error ? forgeError.message : String(forgeError)}`
-      )
     }
   }
 }
