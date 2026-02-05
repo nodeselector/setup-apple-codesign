@@ -68,13 +68,13 @@ jobs:
         run: |
           name="Apple Development: Created via API (DEADBEEFACID)"
           result=$(security find-certificate -c "$name" -a)
-          if echo $result | grep -q "$name"; then
+          if echo "$result" | grep -q "$name"; then
             echo "Certificate found in keychain"
             echo "::debug::Certificate found in keychain"
           else
             echo "Unable to find certificate in keychain"
             echo "::error title=Certificate not found::Unable to find certificate in keychain"
-            echo $result
+            echo "$result"
             exit 1
           fi
 
@@ -87,18 +87,18 @@ jobs:
           asset-type: app-store-connect-api-key
           secret-value: ${{ env.APP_STORE_CONNECT_API_KEY }}
 
-      - name: Validate certificate installed
+      - name: Validate API key installed
         run: |
-          if ! [[ -f $RUNNER_TEMP/.app-store-connect-api-key.p8 ]]; then
+          if ! [[ -f "$RUNNER_TEMP/.app-store-connect-api-key.p8" ]]; then
             echo "App Store Connect API Key not found"
             echo "::error title=App Store Connect API Key not found::App Store Connect API Key not found"
-            ls -la $RUNNER_TEMP
+            ls -la "$RUNNER_TEMP"
             exit 1
           fi
 
-          if ! [[ -f $RUNNER_TEMP/.app-store-connect-api-key.json ]]; then
+          if ! [[ -f "$RUNNER_TEMP/.app-store-connect-api-key.json" ]]; then
             echo "App Store Connect API Key object not found"
             echo "::error title=App Store Connect API Key object not found::App Store Connect API Key object not found"
-            ls -la $RUNNER_TEMP
+            ls -la "$RUNNER_TEMP"
             exit 1
           fi
