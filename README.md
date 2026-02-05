@@ -22,16 +22,14 @@ For an overview of the automated and manual code signing process, see
 
 ## Sample Workflow
 
-> [!NOTE]
-> Apple Developer Enterprise accounts do not support App Store Connect
-> API keys.
->
-> [!IMPORTANT]
-> "Automatically manage signing" in Xcode refers to how Xcode behaves when
-> signed into a developer account through the GUI. This does not apply to
-> `xcodebuild`, which requires explicit API authorization via the
-> `-allowProvisioningUpdates` flag and authentication parameters, regardless
-> of the Xcode project's signing configuration.
+**Note:** Apple Developer Enterprise accounts do not support App Store Connect
+API keys.
+
+**Important:** "Automatically manage signing" in Xcode refers to how Xcode
+behaves when signed into a developer account through the GUI. This does not
+apply to `xcodebuild`, which requires explicit API authorization via the
+`-allowProvisioningUpdates` flag and authentication parameters, regardless
+of the Xcode project's signing configuration.
 
 Both the API key and development certificate are required for automated
 signing. The App Store Connect API key enables `xcodebuild` to communicate

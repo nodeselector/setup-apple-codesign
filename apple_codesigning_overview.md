@@ -49,7 +49,7 @@ This means that `xcodebuild` must be told where to find the provisioning
 profile. You have two options:
 
 1. Install the provisioning profile locally
-2. Allow `xcodebuild` to fetch the provisioning profile via App Store Connect
+1. Allow `xcodebuild` to fetch the provisioning profile via App Store Connect
 
 **Note:** The `PROVISIONING_PROFILE_SPECIFIER` is the name of the provisioning
 profile in the Apple Developer Portal, NOT a filename, and should match the name
@@ -114,7 +114,7 @@ xcodebuild -project helloworld.xcodeproj \
 The `PROVISIONING_PROFILE_SPECIFIER` identifier must be either:
 
 1. The profile's filename if the profile is installed on the host machine, OR
-2. The profile's name in the Apple Developer Portal, if allowing `xcodebuild` to
+1. The profile's name in the Apple Developer Portal, if allowing `xcodebuild` to
    fetch the provisioning profile remotely
 
 ### Certificate and Profile Management
