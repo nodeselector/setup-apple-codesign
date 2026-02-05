@@ -9,11 +9,11 @@ branding:
 inputs:
   asset-type:
     description: >
-      * The type of asset to import. This can be either:
-        * `certificate`
-        * `provisioning-profile`
-        * `app-store-connect-api-key`
-    required: true
+      The type of asset to import. Valid values: `certificate`,
+      `provisioning-profile`, or `app-store-connect-api-key`. When omitted, the
+      action sets up both the API key and certificate in one step.
+    required: false
+    default: ''
   secret-value:
     description: >
       * The value of the secret to import.
