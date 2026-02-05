@@ -262,25 +262,6 @@ export class Keychain {
   }
 
   /**
-   * Import a certificate from a Buffer (P12 format).
-   * @param certificateBuffer The Buffer containing the P12 certificate.
-   * @param options The options for importing the certificate.
-   */
-  async importCertificateFromP12Buffer(
-    certificateBuffer: Buffer,
-    options?: CertificateImportOptions
-  ): Promise<void> {
-    const tmpDir = fs.mkdtempSync('certificate-')
-    const certificatePath = path.join(tmpDir, 'certificate.p12')
-    try {
-      fs.writeFileSync(certificatePath, certificateBuffer)
-      await this.importCertificate(certificatePath, options)
-    } finally {
-      fs.rmSync(tmpDir, { recursive: true })
-    }
-  }
-
-  /**
    * Import a certificate from an ArrayBuffer.
    * @param certificateBuffer The ArrayBuffer containing the certificate.
    * @param options The options for importing the certificate.
