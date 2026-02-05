@@ -96,7 +96,8 @@ describe('action', () => {
       expect.objectContaining({
         keychainName: 'ci',
         keychainPassword: 'goodpassword!'
-      })
+      }),
+      { password: undefined }
     )
   })
 
@@ -130,7 +131,8 @@ describe('action', () => {
       expect.objectContaining({
         keychainName: 'ci',
         keychainPassword: expect.stringMatching(keychainPasswordRegex)
-      })
+      }),
+      { password: undefined }
     )
   })
 

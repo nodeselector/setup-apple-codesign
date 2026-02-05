@@ -31,7 +31,15 @@ export async function run(): Promise<void> {
         }
         core.setSecret(keychainPassword)
         const keychain = new Keychain(keychainName, keychainPassword)
-        await prepareKeychainWithDeveloperCertificate(secretValue, keychain)
+        const certificatePassword: string = core.getInput(
+          'certificate-password'
+        )
+        if (certificatePassword) {
+          core.setSecret(certificatePassword)
+        }
+        await prepareKeychainWithDeveloperCertificate(secretValue, keychain, {
+          password: certificatePassword || undefined
+        })
         break
       }
       case 'provisioning-profile':
