@@ -1,0 +1,14 @@
+[extend]
+useDefault = true
+
+[allowlist]
+paths = [
+  '''.*__tests__/.*\.ts$''',
+]
+
+# Allow string comparisons checking for PEM headers (false positives - not actual secrets)
+# These match findings where the line contains .includes() checks
+regexTarget = "match"
+regexes = [
+  '''\.includes\(''',
+]
