@@ -9,14 +9,15 @@ branding:
 inputs:
   asset-type:
     description: >
-      * The type of asset to import. This can be either:
-        * `certificate`
-        * `provisioning-profile`
-        * `app-store-connect-api-key`
-    required: true
+      The type of asset to import. If not specified, sets up both API key and
+      certificate (recommended). Specific asset types for advanced use:
+      `certificate`, `provisioning-profile`, or `app-store-connect-api-key`.
+    required: false
+    default: ''
   secret-value:
     description: >
-      * The value of the secret to import.
+      The value of the secret to import. For `certificate` and
+      `provisioning-profile` asset types.
     default: ''
   app-store-connect-api-key-key-id:
     description: >
@@ -45,6 +46,11 @@ inputs:
     description: >
       * The password for the keychain. * Only valid for the `certificate`
       asset-type.
+    default: ''
+  certificate-password:
+    description: >
+      * The password for encrypted certificates (P12 files or PEM files with
+      encrypted private keys). * Only valid for the `certificate` asset-type.
     default: ''
 outputs:
   app-store-connect-api-key-key-id:

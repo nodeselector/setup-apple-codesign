@@ -96,7 +96,8 @@ describe('action', () => {
       expect.objectContaining({
         keychainName: 'ci',
         keychainPassword: 'goodpassword!'
-      })
+      }),
+      { password: undefined }
     )
   })
 
@@ -130,7 +131,8 @@ describe('action', () => {
       expect.objectContaining({
         keychainName: 'ci',
         keychainPassword: expect.stringMatching(keychainPasswordRegex)
-      })
+      }),
+      { password: undefined }
     )
   })
 
@@ -194,7 +196,7 @@ describe('action', () => {
 
     await main.run()
     expect(runMock).toHaveReturned()
-    expect(setSecretMock).toHaveBeenCalledWith('')
+    expect(setSecretMock).not.toHaveBeenCalled()
     expect(certificateMock).not.toHaveBeenCalled()
     expect(provisioningProfileMock).not.toHaveBeenCalled()
     expect(appStoreConnectApiKeyMock).toHaveBeenCalledWith({

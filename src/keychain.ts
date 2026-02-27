@@ -3,7 +3,9 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 export type CertificateImportOptions = {
-  ForCodeSigning: boolean
+  ForCodeSigning?: boolean
+  /** Password for encrypted certificates (P12 or PEM with encrypted private key). */
+  password?: string
 }
 
 export class Keychain {
@@ -98,6 +100,10 @@ export class Keychain {
       this.keychainNameToPath()
     ]
 
+    if (options?.password !== undefined) {
+      importArgs = importArgs.concat(['-P', options.password])
+    }
+
     if (options?.ForCodeSigning) {
       importArgs = importArgs.concat([
         '-T',
@@ -115,36 +121,144 @@ export class Keychain {
     }
 
     if (options?.ForCodeSigning) {
-      const setAcl = await this.runCommand('security', [
-        'set-key-partition-list',
-        '-S',
-        'apple-tool:,apple:',
-        '-k',
-        this.keychainPassword,
-        this.keychainNameWithFileExtension()
-      ])
-
-      if (setAcl.Code !== 0) {
-        throw new Error(`Failed to set key partition list: ${setAcl.Stderr}`)
-      }
+      await this.setKeyPartitionList()
     }
   }
 
   /**
-   * Import a certificate from a string.
+   * Import multiple certificate files in batch.
+   * Sets the key partition list ACL once after all imports complete.
+   */
+  private async importCertificateBatch(
+    certificatePaths: string[],
+    options?: CertificateImportOptions
+  ): Promise<void> {
+    for (const certPath of certificatePaths) {
+      let importArgs = ['import', certPath, '-k', this.keychainNameToPath()]
+
+      if (options?.password !== undefined) {
+        importArgs = importArgs.concat(['-P', options.password])
+      }
+
+      if (options?.ForCodeSigning) {
+        importArgs = importArgs.concat([
+          '-T',
+          '/usr/bin/codesign',
+          '-T',
+          '/usr/bin/security'
+        ])
+      }
+
+      const importCertResult = await this.runCommand('security', importArgs)
+      if (importCertResult.Code !== 0) {
+        throw new Error(
+          `Failed to import certificate: ${importCertResult.Stderr}`
+        )
+      }
+    }
+
+    if (options?.ForCodeSigning) {
+      await this.setKeyPartitionList()
+    }
+  }
+
+  /**
+   * Set the key partition list for code signing.
+   * This must be called after all keys and certificates are imported.
+   */
+  async setKeyPartitionList(): Promise<void> {
+    const setAcl = await this.runCommand('security', [
+      'set-key-partition-list',
+      '-S',
+      'apple-tool:,apple:',
+      '-k',
+      this.keychainPassword,
+      this.keychainNameWithFileExtension()
+    ])
+
+    if (setAcl.Code !== 0) {
+      throw new Error(`Failed to set key partition list: ${setAcl.Stderr}`)
+    }
+  }
+
+  /**
+   * Import a certificate from a string (PEM format).
+   * Handles combined PEM files containing both private keys and certificates
+   * by splitting them and importing each component separately.
    */
   async importCertificateFromString(
     certificateString: string,
     options?: CertificateImportOptions
   ): Promise<void> {
     const tmpDir = fs.mkdtempSync('certificate-')
-    const certificatePath = path.join(tmpDir, 'certificate.pem')
     try {
-      fs.writeFileSync(certificatePath, certificateString)
-      await this.importCertificate(certificatePath, options)
+      // Split the PEM into individual components
+      const pemBlocks = this.splitPemBlocks(certificateString)
+
+      if (pemBlocks.length === 0) {
+        // If no PEM blocks found, try importing as-is
+        const certificatePath = path.join(tmpDir, 'certificate.pem')
+        fs.writeFileSync(certificatePath, certificateString)
+        await this.importCertificate(certificatePath, options)
+      } else if (pemBlocks.length === 1) {
+        // Single block, import normally
+        const block = pemBlocks[0]
+        const extension = this.getPemBlockExtension(block)
+        const filePath = path.join(tmpDir, `component-0${extension}`)
+        fs.writeFileSync(filePath, block)
+        await this.importCertificate(filePath, options)
+      } else {
+        // Multiple blocks: use batch import
+        const filePaths: string[] = []
+        for (let i = 0; i < pemBlocks.length; i++) {
+          const block = pemBlocks[i]
+          const extension = this.getPemBlockExtension(block)
+          const filePath = path.join(tmpDir, `component-${i}${extension}`)
+          fs.writeFileSync(filePath, block)
+          filePaths.push(filePath)
+        }
+        await this.importCertificateBatch(filePaths, options)
+      }
     } finally {
       fs.rmSync(tmpDir, { recursive: true })
     }
+  }
+
+  /**
+   * Split a PEM string into individual PEM blocks.
+   * @param pemString The combined PEM string.
+   * @returns An array of individual PEM blocks.
+   */
+  private splitPemBlocks(pemString: string): string[] {
+    const blocks: string[] = []
+    // Match PEM blocks: -----BEGIN TYPE-----...-----END TYPE-----
+    const pemRegex =
+      /-----BEGIN [A-Z0-9 ]+-----[\s\S]*?-----END [A-Z0-9 ]+-----/g
+    let match
+    while ((match = pemRegex.exec(pemString)) !== null) {
+      blocks.push(match[0].trim())
+    }
+    return blocks
+  }
+
+  /**
+   * Get the appropriate file extension for a PEM block based on its type.
+   * @param pemBlock The PEM block string.
+   * @returns The file extension to use.
+   */
+  private getPemBlockExtension(pemBlock: string): string {
+    if (
+      pemBlock.includes('-----BEGIN RSA PRIVATE KEY-----') ||
+      pemBlock.includes('-----BEGIN PRIVATE KEY-----') ||
+      pemBlock.includes('-----BEGIN EC PRIVATE KEY-----') ||
+      pemBlock.includes('-----BEGIN ENCRYPTED PRIVATE KEY-----')
+    ) {
+      return '.key'
+    }
+    if (pemBlock.includes('-----BEGIN CERTIFICATE-----')) {
+      return '.crt'
+    }
+    return '.pem'
   }
 
   /**
@@ -158,9 +272,12 @@ export class Keychain {
   ): Promise<void> {
     const tmpDir = fs.mkdtempSync('certificate-')
     const certificatePath = path.join(tmpDir, 'certificate.cer')
-    fs.writeFileSync(certificatePath, Buffer.from(certificateBuffer))
-    await this.importCertificate(certificatePath, options)
-    fs.rmSync(tmpDir, { recursive: true })
+    try {
+      fs.writeFileSync(certificatePath, Buffer.from(certificateBuffer))
+      await this.importCertificate(certificatePath, options)
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true })
+    }
   }
 
   /**
