@@ -66,5 +66,5 @@ outputs:
       * The private key of the App Store Connect API key. * Only valid for the
       `app-store-connect-api-key` asset-type.
 runs:
-  using: node20
+  using: node24
   main: dist/index.js
